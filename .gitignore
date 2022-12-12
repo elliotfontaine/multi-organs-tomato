@@ -1,3 +1,8 @@
+# Specific to project
+input/*.xml
+input/*.txt
+*.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

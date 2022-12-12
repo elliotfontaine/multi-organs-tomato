@@ -1,0 +1,14 @@
+filepaths:
+  sbml: tomato.xml
+  leaf_cons: constraints_tomato_day.txt
+  stem_cons: constraints_tomato_day.txt
+  root_cons: constraints_tomato_day.txt
+
+biomass_rate:
+  leaf: 0.21
+  stem: 0.26
+  root: 0.17
+
+dry_weight_ratios:
+  leaf/root: 3.37
+  stem/root: 1.52
