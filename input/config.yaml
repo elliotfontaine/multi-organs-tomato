@@ -1,10 +1,11 @@
 paths:
+  # relative paths start in the repo directory.
+  # use absolute paths for files located elsewhere.
   sbml: input/tomato_cobra_boundaries.xml
-  leaf_cons: input/constraints_tomato_day.txt
-  stem_cons: input/constraints_tomato_day.txt
-  root_cons: input/constraints_tomato_day.txt
-# relative paths start in the repo directory.
-# use absolute paths for files located elsewhere.
+  organs_constraints:
+    leaf: input/constraints_tomato_day.txt
+    stem: input/constraints_tomato_day.txt
+    root: input/constraints_tomato_day.txt
 
 biomass_rate:
   leaf: 0.21
@@ -14,3 +15,12 @@ biomass_rate:
 dry_weight_ratios:
   leaf/root: 3.37
   stem/root: 1.52
+
+cobra_config:
+  solver: glpk
+    # {"glpk", "cplex", "gurobi", "glpk_exact"}
+    # The default solver for new models. The solver choices are the ones
+    # provided by `optlang` and depend on solvers installed in your environment.
+  bounds: (-1000.0, 1000.0)
+    # The default reaction bounds for newly created reactions. The bounds
+    # are in the form of lower_bound, upper_bound (default -1000.0, 1000.0).

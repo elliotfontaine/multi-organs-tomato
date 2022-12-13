@@ -17,10 +17,10 @@ def computeInitialLeafBiomass(flexflux, sbml, leaf_constraints, results_dir) -> 
     return getObjectiveFromResults(leaf_result_file)  
 
 def computeLeafBiomass(sbml, leaf_constraints, Y_root, Y_stem) -> float:
-    return
+    pass
 
 def computeRootSucrose(sbml, root_constraints, X_leaf, Z_leaf, Z_stem) -> float:
-    return
+    pass
 
 def computeStemSucrose(sbml, stem_constraints, X_leaf) -> float:
-    return
+    pass
