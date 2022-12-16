@@ -17,12 +17,5 @@ def sinkFba(sink_model: cobra.Model, nutrients: dict) -> Tuple[int, dict]:
     flux_sucrose = fba_solution.fluxes['EX_SUCR_eb'] # idem.
     flux_nutrients = {}
     for nutrient in nutrients:
-        print(fba_solution.fluxes[f'EX_{nutrient}_eb'])
         flux_nutrients[nutrient] = fba_solution.fluxes[f'EX_{nutrient}_eb']
     return(flux_sucrose, flux_nutrients)
-
-def computeRootSucrose(sbml, root_constraints, X_leaf, Z_leaf, Z_stem) -> float:
-    pass
-
-def computeStemSucrose(sbml, stem_constraints, X_leaf) -> float:
-    pass

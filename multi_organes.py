@@ -33,43 +33,44 @@ def main():
     
     # Add nutrients export reactions in root model, for leaf/stem supply
     for nutrient in XYLEM_NUTRIENTS:
+        # print(models['root'].reactions.get_by_id(f'EX_{nutrient}_eb'))
         export_reac: cobra.Reaction = models['root'].reactions.get_by_id(
             f'EX_{nutrient}_eb').copy()
         export_reac.id = f'EXPORT_{nutrient}_eb'
         export_reac.name = f'{nutrient} export from root to xylem'
         export_reac.bounds = (0., 1000.)
         models['root'].add_reactions([export_reac])
+        # print(models['root'].reactions.get_by_id(export_reac.id))
+    models['root'].repair()
+        
+    loops = 0
+    while (not hasConverged(time_series_biomass)
+           and loops <= CONFIG['max_loop_number']):
+        leaf_biomass, leaf_xylem = lib.fba.leafFba(models['leaf'], leaf_xylem)
+        updateBiomasses(leaf_biomass, biomasses, time_series_biomass, CONFIG)
+        stem_new_constraints = [('BIOMASS_STEM_SLY_b', biomasses['stem'])]
+        lib.models.updateModelConstraints(models['stem'], stem_new_constraints)
+        stem_sucr, stem_xylem = lib.fba.sinkFba(models['stem'], stem_xylem)
+        root_new_constraints = [
+            (f'EXPORT_{nutrient}_eb',
+             -(
+                 leaf_xylem[nutrient]*CONFIG['dry_weight_ratios']['leaf/root']
+                 + stem_xylem[nutrient]*CONFIG['dry_weight_ratios']['stem/root']))
+            for nutrient in XYLEM_NUTRIENTS
+        ] + [('BIOMASS_ROOT_SLY_b', biomasses['root'])]
+        lib.models.updateModelConstraints(models['root'], root_new_constraints)
+        root_sucr, root_soil = lib.fba.sinkFba(models['root'], root_soil)
+        leaf_new_constraints = [
+            (objectives['stem'],
+            -(
+                stem_sucr/CONFIG['dry_weight_ratios']['leaf/stem']
+                + root_sucr/CONFIG['dry_weight_ratios']['leaf/root']))
+        ]
+        lib.models.updateModelConstraints(models['leaf'], leaf_new_constraints)
+        loops += 1
     
-    leaf_biomass, leaf_xylem = lib.fba.leafFba(models['leaf'], leaf_xylem)
-    updateBiomasses(leaf_biomass, biomasses, time_series_biomass, CONFIG)
-    print(biomasses)
-    stem_new_constraints = [('BIOMASS_STEM_SLY_b', biomasses['stem'])]
-    lib.models.updateModelConstraints(models['stem'], stem_new_constraints)
-    
-    print(models['stem'].objective,
-          models['stem'].reactions.EX_SUCR_eb.reverse_id,
-          models['stem'].reactions.EX_SUCR_eb.reverse_variable,
-          models['stem'].reactions.BIOMASS_STEM_SLY_b.reverse_id,
-          models['stem'].reactions.BIOMASS_STEM_SLY_b.bounds)
-    stem_sucr, stem_xylem = lib.fba.sinkFba(models['stem'], stem_xylem)
-    print(leaf_xylem)
-    print(stem_xylem)
-    root_new_constraints = [
-        (f'EXPORT_{nutrient}_eb', -(leaf_xylem[nutrient] + stem_xylem[nutrient]))
-        for nutrient in XYLEM_NUTRIENTS
-    ]
-    print(root_new_constraints)
-    lib.models.updateModelConstraints(models['root'], root_new_constraints)
-    
-    # root_sucr, root_soil = lib.fba.sinkFba(models['root'], root_soil)
-    
-    # leaf_new_constraints = [(objectives['stem'], stem_sucr + root_sucr)]
-    # lib.models.updateModelConstraints(models['leaf'], leaf_new_constraints)
-    
-    # leaf_biomass, leaf_xylem = lib.fba.leafFba(models['leaf'], leaf_xylem)
-    # updateBiomasses(leaf_biomass, biomasses, time_series_biomass, CONFIG)
-    
-    print(biomasses, time_series_biomass)
+    print(time_series_biomass)
+    print(f'{loops} loops before convergence.')
 
 
 def updateBiomasses(leaf_biomass, dict_biomasses, dict_series, config) -> None:
@@ -87,6 +88,14 @@ def updateBiomasses(leaf_biomass, dict_biomasses, dict_series, config) -> None:
                                            biomass_rates['leaf'])
     for organ in dict_biomasses:
         dict_series[organ].append(dict_biomasses[organ])
-        
+
+     
+def hasConverged(time_series_biomass):
+    if len(time_series_biomass['leaf']) < 2:
+        return False
+    t = time_series_biomass['leaf'][-1]
+    t_minus_1 = time_series_biomass['leaf'][-2]
+    deviation = abs(t-t_minus_1)/t
+    return deviation < CONFIG['convergence_threshold']
 
 main()

@@ -17,8 +17,3 @@ def updateModelConstraints(
         model: cobra.Model, reactions_constraints: list) -> None:
     for cons in reactions_constraints:
         model.reactions.get_by_id(cons[0]).bounds = (cons[1], cons[1])
-        # new_constraint = model.problem.Constraint(
-        #     model.reactions.get_by_id(cons[0]).flux_expression,
-        #     lb=cons[1],
-        #     ub=cons[1]
-        # )

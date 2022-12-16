@@ -70,7 +70,6 @@ def parseConstraintsFile(constraints_file) -> Constraints:
 #         if element.count('*'):
 # UNFINISHED
             
-        
 
 def loadConfig(config_file) -> dict:
     with open(config_file) as f:
