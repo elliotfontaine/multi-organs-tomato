@@ -11,23 +11,27 @@ biomass_rates:
   leaf: 0.21
   stem: 0.26
   root: 0.17
-
+  # Used to constraint stem/root biomass rates relative to leaf.
 dry_weight_ratios:
   leaf/root: 3.37
   stem/root: 1.52
+  # Used to proportionate xylem and phloem flux between organs.
 
 xylem_nutrients: [H2O, NO3, NH4, SO4, PI,
                   NA1, K, mg2, ca2, cl]
   # List of the xylem nutrients for leaf/stem that will be added as constraint
   # for the root to export upward.
-  # Should the naming be inconsistent in your model, know these IDs should be
-  # the ones from the reaction name (e.g. R_EX_H2O_eb), not the metabolites
+  # Should the naming be inconsistent in your model, know these IDs are
+  # the ones from reactions names (e.g. R_EX_H2O_eb), not the metabolites
   # themselves (h2o).
 
 convergence_threshold: 0.05
   # (default: 0.05)
-  # The algorithm will stop if leaf_biomass(T) is in the
+  # The algorithm will stop if leaf_biomass(T) is inside the
   # [leaf_biomass(T-1) * (1 ± convergence_threshold)] interval.
+max_loop_number: 20
+  # Maximum number of loops for the system to converge before the
+  # algorithm abort.
 
 logging_level: debug
 
