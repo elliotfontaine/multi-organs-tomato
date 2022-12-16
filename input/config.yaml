@@ -1,13 +1,13 @@
 paths:
-  # relative paths start in the repo directory.
+  # relative paths start in the project root directory.
   # use absolute paths for files located elsewhere.
   sbml: input/tomato_cobra_boundaries.xml
   organs_constraints:
-    leaf: input/constraints_tomato_day.txt
-    stem: input/constraints_tomato_day.txt
-    root: input/constraints_tomato_day.txt
+    leaf: input/cons_leaf_tomato_day.txt
+    stem: input/cons_stem_tomato_day.txt
+    root: input/cons_leaf_tomato_day.txt
 
-biomass_rate:
+biomass_rates:
   leaf: 0.21
   stem: 0.26
   root: 0.17
@@ -16,11 +16,29 @@ dry_weight_ratios:
   leaf/root: 3.37
   stem/root: 1.52
 
+xylem_nutrients: [H2O, NO3, NH4, SO4, PI,
+                  NA1, K, mg2, ca2, cl]
+  # List of the xylem nutrients for leaf/stem that will be added as constraint
+  # for the root to export upward.
+  # Should the naming be inconsistent in your model, know these IDs should be
+  # the ones from the reaction name (e.g. R_EX_H2O_eb), not the metabolites
+  # themselves (h2o).
+
+convergence_threshold: 0.05
+  # (default: 0.05)
+  # The algorithm will stop if leaf_biomass(T) is in the
+  # [leaf_biomass(T-1) * (1 ± convergence_threshold)] interval.
+
+logging_level: debug
+
 cobra_config:
   solver: glpk
+    # (default: glpk)
     # {"glpk", "cplex", "gurobi", "glpk_exact"}
-    # The default solver for new models. The solver choices are the ones
-    # provided by `optlang` and depend on solvers installed in your environment.
-  bounds: (-1000.0, 1000.0)
-    # The default reaction bounds for newly created reactions. The bounds
-    # are in the form of lower_bound, upper_bound (default -1000.0, 1000.0).
+      # The default solver for new models. The solver
+      # choices are the ones provided by `optlang` and
+      # depend on solvers installed in your environment.
+  bounds: [-1000.0, 1000.0]
+    # (default: -1000.0, 1000.0).
+      # The default reaction bounds for newly created reactions.
+      # The bounds are in the form of lower_bound, upper_bound.

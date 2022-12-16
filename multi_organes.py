@@ -1,43 +1,92 @@
 import cobra
-from lib.io import *
-from lib.fba import *
+import lib.io
+import lib.fba
+import lib.models
 
-
-leaf_biomass: float = 0
-root_biomass: float = 0
-stem_biomass: float = 0
-leaf_biomass_list: list = []
-root_biomass_list: list = []
-stem_biomass_list: list = []
-root_phloem: dict = {'sucr': float}
-stem_phloem: dict = {'sucr': float}
-leaf_xylem: dict = {'no3': float, '...' : float}
-stem_xylem: dict = {'no3': float, '...' : float}
-
-def createOrganModel(default_model, organ_cons):
-    organ_model = default_model.copy()
-    organ_model.objective = organ_cons['obj'][0]['reac']
-    organ_model.objective.direction = organ_cons['obj'][0]['direction']
-    for flux in organ_cons['flux']:
-        organ_model.reactions.get_by_id(flux['reac']).bounds = (flux['minbound'], flux['maxbound'])
-    return organ_model
+# CONSTANTS
+CONFIG = lib.io.loadConfig('input/config.yaml')
+COBRA_CONFIG = lib.io.editCobraConfig(cobra.Configuration(), CONFIG)
+XYLEM_NUTRIENTS = tuple(CONFIG['xylem_nutrients'])
+ORGANS = ('leaf', 'stem', 'root') # Can't be changed easely for now 😢
 
 
 def main():
-    config = loadConfig('input/config.yaml')
-    cobra_config = cobra.Configuration()
-    default_model = cobra.io.read_sbml_model(config['paths']['sbml'])
+    objectives: dict = {organ: str for organ in ORGANS}
+    biomasses: dict = {organ: float for organ in ORGANS}
+    time_series_biomass: dict = {organ: [] for organ in ORGANS}
+    leaf_xylem: dict = {nutrient: float for (nutrient) in XYLEM_NUTRIENTS}
+    stem_xylem: dict = {nutrient: float for (nutrient) in XYLEM_NUTRIENTS}
+    root_soil: dict = {nutrient: float for (nutrient) in XYLEM_NUTRIENTS}
+    stem_sucr: float
+    root_sucr: float
+    
+    # Create a default plant model from sbml file written in config.yml
+    default_model = cobra.io.read_sbml_model(CONFIG['paths']['sbml'])
     models = {'default': default_model}
-    for organ in ('leaf', 'stem', 'root'):
-        cons_file = config['paths']['organ_constraints'].get(organ)
-        organ_cons = parseConstraintsFile(cons_file)
-        models['organ'] = createOrganModel(default_model, organ_cons)
-    print(models)
     
-    # leaf_biomass = computeInitialLeafBiomass()
-    # updateBiomasses(leaf_biomass) # change les biomasses des 2 autres, et ajoute aux 3 listes
+    # Duplicate the model 3* (leaf, stem and root models)
+    for organ in (ORGANS):
+        cons_file = CONFIG['paths']['organs_constraints'].get(organ)
+        organ_cons = lib.io.parseConstraintsFile(cons_file)
+        objectives[organ] = organ_cons['obj'][0]['reac']
+        models[organ] = lib.models.createOrganModel(default_model, organ_cons)
     
-    # solution = leaf_model.optimize()
-    # print(solution)
+    # Add nutrients export reactions in root model, for leaf/stem supply
+    for nutrient in XYLEM_NUTRIENTS:
+        export_reac: cobra.Reaction = models['root'].reactions.get_by_id(
+            f'EX_{nutrient}_eb').copy()
+        export_reac.id = f'EXPORT_{nutrient}_eb'
+        export_reac.name = f'{nutrient} export from root to xylem'
+        export_reac.bounds = (0., 1000.)
+        models['root'].add_reactions([export_reac])
+    
+    leaf_biomass, leaf_xylem = lib.fba.leafFba(models['leaf'], leaf_xylem)
+    updateBiomasses(leaf_biomass, biomasses, time_series_biomass, CONFIG)
+    print(biomasses)
+    stem_new_constraints = [('BIOMASS_STEM_SLY_b', biomasses['stem'])]
+    lib.models.updateModelConstraints(models['stem'], stem_new_constraints)
+    
+    print(models['stem'].objective,
+          models['stem'].reactions.EX_SUCR_eb.reverse_id,
+          models['stem'].reactions.EX_SUCR_eb.reverse_variable,
+          models['stem'].reactions.BIOMASS_STEM_SLY_b.reverse_id,
+          models['stem'].reactions.BIOMASS_STEM_SLY_b.bounds)
+    stem_sucr, stem_xylem = lib.fba.sinkFba(models['stem'], stem_xylem)
+    print(leaf_xylem)
+    print(stem_xylem)
+    root_new_constraints = [
+        (f'EXPORT_{nutrient}_eb', -(leaf_xylem[nutrient] + stem_xylem[nutrient]))
+        for nutrient in XYLEM_NUTRIENTS
+    ]
+    print(root_new_constraints)
+    lib.models.updateModelConstraints(models['root'], root_new_constraints)
+    
+    # root_sucr, root_soil = lib.fba.sinkFba(models['root'], root_soil)
+    
+    # leaf_new_constraints = [(objectives['stem'], stem_sucr + root_sucr)]
+    # lib.models.updateModelConstraints(models['leaf'], leaf_new_constraints)
+    
+    # leaf_biomass, leaf_xylem = lib.fba.leafFba(models['leaf'], leaf_xylem)
+    # updateBiomasses(leaf_biomass, biomasses, time_series_biomass, CONFIG)
+    
+    print(biomasses, time_series_biomass)
 
-print(parseConstraintsFile('input/constraints_tomato_day.txt'))
+
+def updateBiomasses(leaf_biomass, dict_biomasses, dict_series, config) -> None:
+    biomass_rates = config['biomass_rates']
+    # dict_biomasses = {
+    #     'leaf': leaf_biomass, 
+    #     'stem': leaf_biomass*(biomass_rates['stem']/biomass_rates['leaf']),
+    #     'root': leaf_biomass*(biomass_rates['root']/biomass_rates['leaf'])
+    # }
+    # Why doesn't it work in that form ? 
+    dict_biomasses['leaf'] = leaf_biomass
+    dict_biomasses['stem'] = leaf_biomass*(biomass_rates['stem']/
+                                           biomass_rates['leaf'])
+    dict_biomasses['root'] = leaf_biomass*(biomass_rates['root']/
+                                           biomass_rates['leaf'])
+    for organ in dict_biomasses:
+        dict_series[organ].append(dict_biomasses[organ])
+        
+
+main()

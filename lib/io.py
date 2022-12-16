@@ -1,7 +1,7 @@
 from typing import List, TypedDict
+from re import split, compile
 import yaml
 import os
-from re import split, compile
 os.system("color")
 
 class bcolors:
@@ -19,7 +19,7 @@ class bcolors:
 class Constraints(TypedDict):
     obj: List[dict]
     flux: List[dict]
-    equations: List[str]
+    equations: List[dict]
 
 def parseConstraintsFile(constraints_file) -> Constraints:
     pass # TO IMPLEMENT: check file presence
@@ -28,11 +28,15 @@ def parseConstraintsFile(constraints_file) -> Constraints:
     f.close()
     constraints: Constraints = {'obj': [], 'flux': [], 'equations': []}
     for L in lines_list:
-        if L.startswith('#') or L == '' or L == 'EQUATIONS':
+        if L.startswith('#') or L in ('', 'EQUATIONS'):
             continue
-        elif compile('obj : MAX\(.*\)').match(L) or compile('obj : MIN\(.*\)').match(L):
-            obj = {'reac': L[10:-1], 'direction': L[6:9].lower()}
-            obj['reac'] = obj['reac'][2:] if obj['reac'].startswith('R_') else obj['reac']
+        elif (compile('obj : MAX\(.*\)').match(L) or
+              compile('obj : MIN\(.*\)').match(L)):
+            obj = {'reac': L[10:-1], 'coeff': 1, 'direction': L[6:9].lower()}
+            if obj['reac'].startswith('-'):
+                obj['reac'] = obj['reac'][1:]
+                obj['coeff'] = -1
+            if obj['reac'].startswith('R_'): obj['reac'] = obj['reac'][2:]
             constraints['obj'].append(obj)
         elif L.count('\t') == 2:
             flux = split(r'\t+', L)
@@ -41,26 +45,44 @@ def parseConstraintsFile(constraints_file) -> Constraints:
                 'minbound': float(flux[1]), 
                 'maxbound': float(flux[2])
             }
-            flux['reac'] = flux['reac'][2:] if flux['reac'].startswith('R_') else flux['reac']
+            if flux['reac'].startswith('R_'): flux['reac'] = flux['reac'][2:]
             constraints['flux'].append(flux)
         elif '=' in L:
-            constraints['equations'].append(L)
+            constraints['equations'].append(L) # append(analyzeEquation(L))
         else:
             raise SystemExit(f'{bcolors.FAIL}Error:{bcolors.ENDC} ill-formed constraints file.')
     return constraints
 
-def loadConfig(config_file):
+# def analyzeEquation(equation_string: str) -> dict:
+#     equation: dict = {
+#         'sign': str,
+#         'left_metabs': [],
+#         'right_metabs': [],
+#         'left_coeffs': [],
+#         'right_coeffs': []
+#     }
+#     string_elements = equation_string.split()
+#     after_sign = False
+#     for element in string_elements:
+#         if element in ('<', '=', '>'):
+#             equation['sign'] = element
+#             after_sign = True
+#         if element.count('*'):
+# UNFINISHED
+            
+        
+
+def loadConfig(config_file) -> dict:
     with open(config_file) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     return config
 
-def getObjectiveFromResults(fba_results_file) -> float:
-    f = open(fba_results_file, 'r')
-    next(f)
-    next(f)
-    objective: str = f.readline()[6:]
-    f.close()
-    return float(objective)
-
+def editCobraConfig(default_cobra_config, config):
+    bounds = config['cobra_config']['bounds']
+    solver = config['cobra_config']['solver']
+    if bounds != '': default_cobra_config.bounds = bounds
+    if solver != '': default_cobra_config.solver = solver
+    return default_cobra_config
+    
 def drawTimeSeries(series_X_leaf, others):
     pass
