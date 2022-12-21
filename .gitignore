@@ -1,7 +1,9 @@
 # Specific to project
 input/*.xml
 input/*.txt
+output/*.tsv
 *.txt
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

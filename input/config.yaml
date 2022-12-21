@@ -26,15 +26,17 @@ xylem_nutrients: [H2O, NO3, NH4, SO4, PI,
   # the ones from reactions names (e.g. R_EX_H2O_eb), not the metabolites
   # themselves (h2o).
 
+#  NOT USED ||| sucrose_exchange_id: 
+
 convergence_threshold: 0.05
   # (default: 0.05)
   # The algorithm will stop if leaf_biomass(T) is inside the
   # [leaf_biomass(T-1) * (1 ± convergence_threshold)] interval.
-max_loop_number: 20
+max_loop_number: 30
   # Maximum number of loops for the system to converge before the
   # algorithm abort.
 
-logging_level: debug
+#  NOT USED ||| logging_level: debug
 
 cobra_config:
   solver: glpk

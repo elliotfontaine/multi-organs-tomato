@@ -52,7 +52,7 @@ def parseConstraintsFile(constraints_file) -> Constraints:
         elif '=' in L:
             constraints['equations'].append(analyzeEquation(L))
         else:
-            raise SystemExit(f'{bcolors.FAIL}Error:{bcolors.ENDC} ill-formed constraints file.')
+            raise Exception(f'{bcolors.FAIL}Error:{bcolors.ENDC} ill-formed constraints file.')
     return constraints
 
 
@@ -148,13 +148,13 @@ def editCobraConfig(default_cobra_config, config):
     if solver != '': default_cobra_config.solver = solver
     return default_cobra_config
     
-def drawTimeSeries(time_series: dict, title: str):
+def drawTimeSeries(time_series: dict, title: str, out_path: str) -> None:
     n_loops = len(list(time_series.values())[0])
     for key in time_series:
         plt.plot(range(1, n_loops+1), time_series[key], label = key)
     plt.title(title)
     plt.legend()
-    plt.show()
+    plt.savefig(out_path)
 
 def writeFbaFluxTable(flux_df: pd.DataFrame, out_path: str) -> None:
     flux_df.to_csv(out_path, sep='\t', index=True)
