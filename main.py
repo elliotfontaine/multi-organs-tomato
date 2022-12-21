@@ -41,7 +41,6 @@ def main():
     for sink_organ in ('stem', 'root'):
         models[sink_organ].objective = CONFIG['sucrose_ex_reac']
         models[sink_organ].objective.direction = 'max'
-        print(models[sink_organ].objective)
     models['leaf'].objective = CONFIG['biomass_reac']['leaf']
     models[sink_organ].objective.direction = 'max'
     
@@ -93,6 +92,7 @@ def main():
         ]
         lib.models.updateModelConstraints(models['leaf'], leaf_new_constraints)
         loops += 1
+        print(f"loop: {loops} ")
         
     print(time_series_biomass)
     print(f'{loops} loops before convergence.')
