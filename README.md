@@ -5,16 +5,20 @@
 ### 💡 Functionalities
 
 - Generates **organ-specific models** from a generic plant model and FlexFlux contraints files,
-- Run **sequencial FBA simulations**, where:
+- Runs **sequencial FBA simulations**, where:
     - The leaf tries to *maximize its biomass rate*, while exporting sucrose to sink organs,
-    - Root and stem trie to *minimize their sucrose uptake*, while having to attain a fixed biomass rate (expressed as a fraction of the leaf's one)
-- Stop the feedback loop and export output (plots, flux tables) when biomass rates converge.
+    - Then, root and stem trie to *minimize their sucrose uptake*, while having to attain a fixed biomass rate (expressed as a fraction of the leaf's one)
+- Stops the feedback loop and export **output (plots, flux tables)** when biomass rates converge.
 
 
 ### 📚 How to use
-
+- Install the required dependencies:
+    - **Python 3.8(.10)** (higher versions should work, but not tested yet),
+    - **CobraPy** (`pip install cobra`),
+    - **PyYAML** (`pip install pyyaml`),
+    - *Optional*: **Matplotlib** for output plotting (`pip install matplotlib`).
 - Inside the `input` directory, add input files (sbml, FlexFlux constraints) and edit `config.yaml` according to your needs.
-- Run `main.py` with Python 3.8 or higher, in an environment that has COBRApy installed.
+- Run `main.py`.
 - Results are written in the `output` directory.
 
 

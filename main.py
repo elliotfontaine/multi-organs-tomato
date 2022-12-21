@@ -16,7 +16,6 @@ ORGANS = ('leaf', 'stem', 'root') # Can't be changed easely for now 😢
 
 
 def main():
-    objectives: dict = {organ: str for organ in ORGANS}
     biomasses: dict = {organ: float for organ in ORGANS}
     time_series_biomass: dict = {organ: [] for organ in ORGANS}
     fba_flux: dict = {organ: pd.DataFrame for organ in ORGANS}
@@ -34,8 +33,17 @@ def main():
     for organ in (ORGANS):
         cons_file = CONFIG['paths']['organs_constraints'].get(organ)
         organ_cons = lib.io.parseConstraintsFile(cons_file)
-        objectives[organ] = organ_cons['obj'][0]['reac']
         models[organ] = lib.models.createOrganModel(default_model, organ_cons)
+    
+    # We actually force the models objectives for the loop, even if the
+    # constraints file parser actually process the objectives
+    # (it should then be reusable in another Python project).
+    for sink_organ in ('stem', 'root'):
+        models[sink_organ].objective = CONFIG['sucrose_ex_reac']
+        models[sink_organ].objective.direction = 'max'
+        print(models[sink_organ].objective)
+    models['leaf'].objective = CONFIG['biomass_reac']['leaf']
+    models[sink_organ].objective.direction = 'max'
     
     # Add nutrients export reactions in root model, for leaf/stem supply
     for nutrient in XYLEM_NUTRIENTS:
@@ -52,29 +60,33 @@ def main():
     loops = 0
     while (not hasConverged(time_series_biomass)
            and loops <= CONFIG['max_loop_number']):
-        leaf_biomass, leaf_xylem, fba_flux['leaf'] = lib.fba.leafFba(models['leaf'],
-                                                              leaf_xylem,
-                                                              objectives['leaf']
+        leaf_biomass, leaf_xylem, fba_flux['leaf'] \
+            = lib.fba.leafFba(models['leaf'],
+                              leaf_xylem,
+                              CONFIG['biomass_reac']['leaf']
         )
         updateBiomasses(leaf_biomass, biomasses, time_series_biomass, CONFIG)
-        stem_new_constraints = [('BIOMASS_STEM_SLY_b', biomasses['stem'])]
+        stem_new_constraints = [(CONFIG['biomass_reac']['stem'],
+                                 biomasses['stem'])]
         lib.models.updateModelConstraints(models['stem'], stem_new_constraints)
-        stem_sucr, stem_xylem, fba_flux['stem'] = lib.fba.sinkFba(models['stem'],
-                                                           stem_xylem,
-                                                           objectives['stem'])
+        stem_sucr, stem_xylem, fba_flux['stem'] = \
+            lib.fba.sinkFba(models['stem'],
+                            stem_xylem,
+                            CONFIG['sucrose_ex_reac'])
         root_new_constraints = [
             (f'EXPORT_{nutrient}_cb',
              -(
                  leaf_xylem[nutrient]*CONFIG['dry_weight_ratios']['leaf/root']
                  + stem_xylem[nutrient]*CONFIG['dry_weight_ratios']['stem/root']))
             for nutrient in XYLEM_NUTRIENTS
-        ] + [('BIOMASS_ROOT_SLY_b', biomasses['root'])]
+        ] + [(CONFIG['biomass_reac']['root'], biomasses['root'])]
         lib.models.updateModelConstraints(models['root'], root_new_constraints)
-        root_sucr, root_soil, fba_flux['root'] = lib.fba.sinkFba(models['root'],
-                                                          root_soil,
-                                                          objectives['root'])
+        root_sucr, root_soil, fba_flux['root'] = \
+            lib.fba.sinkFba(models['root'],
+                            root_soil,
+                            CONFIG['sucrose_ex_reac'])
         leaf_new_constraints = [
-            (objectives['stem'],
+            (CONFIG['sucrose_ex_reac'],
             -(
                 stem_sucr/CONFIG['dry_weight_ratios']['leaf/stem']
                 + root_sucr/CONFIG['dry_weight_ratios']['leaf/root']))
@@ -84,12 +96,12 @@ def main():
         
     print(time_series_biomass)
     print(f'{loops} loops before convergence.')
-    for organ in ORGANS:
-        lib.io.writeFbaFluxTable(fba_flux[organ], 
-                                 f'output/{organ}_fba_results.tsv')
     lib.io.drawTimeSeries(time_series_biomass,
                           'Biomasses time series',
                           'output/biomasses_plot.png')
+    for organ in ORGANS:
+        lib.io.writeFbaFluxTable(fba_flux[organ], 
+                                 f'output/{organ}_fba_results.tsv')
 
 
 def updateBiomasses(leaf_biomass, dict_biomasses, dict_series, config) -> None:

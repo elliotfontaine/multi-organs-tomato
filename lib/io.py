@@ -139,6 +139,10 @@ def removeR_(reac_name: str) -> str:
 def loadConfig(config_file) -> dict:
     with open(config_file) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
+    config['biomass_reac'] = {organ: removeR_(reac_name)
+                                   for organ, reac_name
+                                   in config['biomass_reac'].items()}
+    config['sucrose_ex_reac'] = removeR_(config['sucrose_ex_reac'])
     return config
 
 def editCobraConfig(default_cobra_config, config):

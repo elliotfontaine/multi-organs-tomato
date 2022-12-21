@@ -7,6 +7,14 @@ paths:
     stem: input/cons_stem_tomato_day.txt
     root: input/cons_root_tomato.txt
 
+biomass_reac:
+  leaf: R_BIOMASS_LEAF_SLY_b
+  stem: R_BIOMASS_STEM_SLY_b
+  root: R_BIOMASS_ROOT_SLY_b
+
+sucrose_ex_reac: R_EX_SUCR_eb
+  # Sucrose exchange reaction ID.
+
 biomass_rates:
   leaf: 0.21
   stem: 0.26
@@ -25,8 +33,6 @@ xylem_nutrients: [H2O, NO3, NH4, SO4, PI,
   # Should the naming be inconsistent in your model, know these IDs are
   # the ones from reactions names (e.g. R_EX_H2O_eb), not the metabolites
   # themselves (h2o).
-
-#  NOT USED ||| sucrose_exchange_id: 
 
 convergence_threshold: 0.05
   # (default: 0.05)
