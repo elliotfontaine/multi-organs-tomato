@@ -16,7 +16,7 @@
     - **Python 3.8(.10)** (higher versions should work, but not tested yet),
     - **CobraPy** (`pip install cobra`),
     - **PyYAML** (`pip install pyyaml`),
-    - *Optional*: **Matplotlib** for output plotting (`pip install matplotlib`).
+    - **Matplotlib** for output plotting (`pip install matplotlib`).
 - Inside the `input` directory, add input files (sbml, FlexFlux constraints) and edit `config.yaml` according to your needs.
 - Run `main.py`.
 - Results are written in the `output` directory.

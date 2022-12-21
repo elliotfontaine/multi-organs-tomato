@@ -8,6 +8,7 @@ Before running this project, you need to specify in `config.yaml`:
 - **List of nutrients** (metabolites) that should be allowed in xylem,
 - ID of the **sucrose exchange reaction**.
 
-For the SBML and FlexFlux constraints files, it is advised to put them inside this directory to simplify the path (just write the filename).
+The objective(s) in FlexFlux constraints files are not used by the simulation, because they are fixed (objective for leaf is biomass, and objective for sink organs is to minimize sucrose uptake). So the concerned reactions are to be given by the user in `config.yaml`. The FBAs are always parcimonious.
 
+For the SBML and FlexFlux constraints files, it is advised to put them inside this directory to simplify the path (and just write input/filename).
 There are more optional configuration option available in `config.yaml`, with explanations in the form of comments.
