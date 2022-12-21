@@ -41,15 +41,6 @@ def createOrganModel(default_model: cobra.Model,
         constraint.set_linear_coefficients(coefficients=coefficients)
     return organ_model
 
-# def addModelEquation(model: cobra.Model, equation: dict) -> None:
-#     model_constraint = model.problem.Constraint(
-#         model.reactions.RBPC_pl.flux_expression
-#         - 85*model.reactions.RBCh_pl.flux_expression,
-#         lb=0,
-#         ub=0
-#     )
-#     model.add_cons_vars(model_constraint)
-#     pass
 
 def updateModelConstraints(
         model: cobra.Model, reactions_constraints: list) -> None:
